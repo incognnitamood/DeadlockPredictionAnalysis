@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Backend (not committing)
+backend/
+
+# Model files
+*.joblib
+
+# Images / plots
+*.png
+
+# Python cache
+__pycache__/
+*.pyc
