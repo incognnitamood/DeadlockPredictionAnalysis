@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Prediction Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h2>🔒 Deadlock Predictor</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item" data-page="upload">
+                    <span class="nav-icon">📤</span>
+                    Upload Dataset
+                </a>
+                <a href="#" class="nav-item" data-page="prediction">
+                    <span class="nav-icon">🔮</span>
+                    Live Prediction
+                </a>
+                <a href="#" class="nav-item" data-page="insights">
+                    <span class="nav-icon">🔍</span>
+                    Model Insights
+                </a>
+                <a href="#" class="nav-item" data-page="resources">
+                    <span class="nav-icon">📈</span>
+                    Resource Graph
+                </a>
+                <a href="#" class="nav-item" data-page="about">
+                    <span class="nav-icon">ℹ️</span>
+                    About
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1 id="page-title">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>System Online</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="content-area">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page active">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h3>Total Processes</h3>
+                            <div class="metric-value" id="total-processes">0</div>
+                            <div class="metric-trend">↑ 12% from last week</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Deadlock Risk</h3>
+                            <div class="metric-value" id="deadlock-risk">0%</div>
+                            <div class="metric-trend">↓ 5% improvement</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Active Resources</h3>
+                            <div class="metric-value" id="active-resources">0</div>
+                            <div class="metric-trend">Stable</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Prediction Accuracy</h3>
+                            <div class="metric-value" id="accuracy">0%</div>
+                            <div class="metric-trend">↑ 3% this month</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3>Resource Utilization</h3>
+                            <canvas id="resource-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Deadlock Probability Over Time</h3>
+                            <canvas id="probability-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Page -->
+                <div id="upload-page" class="page">
+                    <div class="upload-container">
+                        <h2>Upload Dataset</h2>
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">📁</div>
+                            <p>Drag & drop your CSV file here</p>
+                            <p>or</p>
+                            <button class="upload-btn" id="upload-btn">Browse Files</button>
+                            <input type="file" id="file-input" accept=".csv" hidden>
+                        </div>
+                        <div class="file-info" id="file-info" style="display: none;">
+                            <h3>Selected File:</h3>
+                            <p id="file-name"></p>
+                            <button class="process-btn" id="process-btn">Process Dataset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prediction Page -->
+                <div id="prediction-page" class="page">
+                    <div class="prediction-container">
+                        <h2>Live Deadlock Prediction</h2>
+                        <div class="input-grid">
+                            <div class="input-group">
+                                <label>Process ID</label>
+                                <input type="number" id="process-id" placeholder="Enter process ID">
+                            </div>
+                            <div class="input-group">
+                                <label>Resource Requests</label>
+                                <input type="text" id="resource-requests" placeholder="e.g., R1,R2,R3">
+                            </div>
+                            <div class="input-group">
+                                <label>Current Hold</label>
+                                <input type="text" id="current-hold" placeholder="e.g., R1,R4">
+                            </div>
+                            <div class="input-group">
+                                <label>Process Priority</label>
+                                <select id="process-priority">
+                                    <option value="1">High</option>
+                                    <option value="2">Medium</option>
+                                    <option value="3">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="predict-btn" id="predict-btn">Predict Deadlock</button>
+                        <div class="prediction-result" id="prediction-result" style="display: none;">
+                            <h3>Prediction Result</h3>
+                            <div class="result-content">
+                                <div class="risk-level" id="risk-level"></div>
+                                <div class="confidence" id="confidence"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights Page -->
+                <div id="insights-page" class="page">
+                    <div class="insights-container">
+                        <h2>Model Insights</h2>
+                        <div class="insights-grid">
+                            <div class="insight-card">
+                                <h3>Feature Importance</h3>
+                                <div id="feature-importance"></div>
+                            </div>
+                            <div class="insight-card">
+                                <h3>Model Performance</h3>
+                                <div id="model-performance"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Page -->
+                <div id="resources-page" class="page">
+                    <div class="resources-container">
+                        <h2>Resource Allocation Graph</h2>
+                        <div class="graph-container">
+                            <div id="resource-graph"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Page -->
+                <div id="about-page" class="page">
+                    <div class="about-container">
+                        <h2>About Deadlock Predictor</h2>
+                        <div class="about-content">
+                            <p>This system uses machine learning to predict deadlock conditions in operating systems based on resource allocation patterns.</p>
+                            <h3>Features:</h3>
+                            <ul>
+                                <li>Real-time deadlock prediction</li>
+                                <li>Resource allocation visualization</li>
+                                <li>Model performance insights</li>
+                                <li>Historical data analysis</li>
+                            </ul>
+                            <h3>Technology Stack:</h3>
+                            <ul>
+                                <li>Python (scikit-learn, pandas)</li>
+                                <li>HTML5, CSS3, JavaScript</li>
+                                <li>Chart.js for data visualization</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
