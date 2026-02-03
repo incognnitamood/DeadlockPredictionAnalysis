@@ -30,13 +30,9 @@
                     <span class="nav-icon">🔍</span>
                     Model Insights
                 </a>
-                <a href="#" class="nav-item" data-page="resources">
-                    <span class="nav-icon">📈</span>
-                    Resource Graph
-                </a>
-                <a href="#" class="nav-item" data-page="about">
-                    <span class="nav-icon">ℹ️</span>
-                    About
+                <a href="#" class="nav-item" data-page="premium">
+                    <span class="nav-icon">📊</span>
+                    Resource Allocation Graph
                 </a>
             </nav>
         </div>
@@ -46,9 +42,12 @@
             <!-- Topbar -->
             <div class="topbar">
                 <div class="topbar-left">
-                    <h1 id="page-title">Dashboard</h1>
+                    <h1 id="page-title">Resource Graph</h1>
                 </div>
                 <div class="topbar-right">
+                    <button id="refresh-all-btn" class="refresh-btn" title="Refresh all data">
+                        🔄 Refresh All
+                    </button>
                     <div class="status-indicator">
                         <div class="status-dot"></div>
                         <span>System Online</span>
@@ -58,8 +57,77 @@
 
             <!-- Page Content -->
             <div class="content-area">
-                <!-- Dashboard Page -->
-                <div id="dashboard-page" class="page active">
+                <!-- Resource Graph Page -->
+                <div id="resources-page" class="page active">
+                    <div class="card resource-graph-card">
+                        <div class="card-header">
+                            <h3>Resource Allocation Graph</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="graph-container" id="resource-graph">
+                                <!-- Graph will be rendered here -->
+                            </div>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="processes">Processes</button>
+                                <button class="filter-btn" data-filter="resources">Resources</button>
+                                <button class="filter-btn" data-filter="allocations">Allocations</button>
+                                <button class="filter-btn" data-filter="requests">Requests</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card system-status-card">
+                        <div class="system-stats">
+                            <div class="stat-item">
+                                <div class="stat-icon">💻</div>
+                                <div class="stat-content">
+                                    <div class="stat-label">CPU</div>
+                                    <div class="stat-value" id="cpu-percent">0%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">💾</div>
+                                <div class="stat-content">
+                                    <div class="stat-label">Memory</div>
+                                    <div class="stat-value" id="memory-percent">0%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">⚙️</div>
+                                <div class="stat-content">
+                                    <div class="stat-label">Processes</div>
+                                    <div class="stat-value" id="total-processes-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card processes-table-card">
+                        <div class="table-header">
+                            <h3>Running Processes</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="processes-table">
+                                <thead>
+                                    <tr>
+                                        <th>PID</th>
+                                        <th>Process Name</th>
+                                        <th>Status</th>
+                                        <th>CPU %</th>
+                                        <th>Memory %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="processes-tbody">
+                                    <!-- Process rows will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other pages remain unchanged -->
+                <div id="dashboard-page" class="page">
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <h3>Total Processes</h3>
@@ -89,7 +157,7 @@
                             <canvas id="resource-chart"></canvas>
                         </div>
                         <div class="chart-container">
-                            <h3>Deadlock Probability Over Time</h3>
+                            <h3>System Risk Score Over Time</h3>
                             <canvas id="probability-chart"></canvas>
                         </div>
                     </div>
@@ -117,35 +185,183 @@
                 <!-- Prediction Page -->
                 <div id="prediction-page" class="page">
                     <div class="prediction-container">
-                        <h2>Live Deadlock Prediction</h2>
-                        <div class="input-grid">
+                        <h2>Deadlock Prediction</h2>
+                        
+                        <!-- Toggle between manual and real-time -->
+                        <div class="prediction-mode-toggle">
+                            <button id="manual-mode-btn" class="mode-btn active">Manual Input</button>
+                            <button id="realtime-mode-btn" class="mode-btn">Real-time System</button>
+                        </div>
+                        
+                        <!-- Manual Input Form -->
+                        <div id="manual-input-section" class="input-section">
+                            <h3>Manual Resource Allocation Input</h3>
+                            
+                            <!-- Available Resources -->
                             <div class="input-group">
-                                <label>Process ID</label>
-                                <input type="number" id="process-id" placeholder="Enter process ID">
+                                <label>Available Resources</label>
+                                <div class="resource-inputs">
+                                    <input type="number" id="avail-r1" placeholder="R1" min="0" value="3">
+                                    <input type="number" id="avail-r2" placeholder="R2" min="0" value="3">
+                                    <input type="number" id="avail-r3" placeholder="R3" min="0" value="2">
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label>Resource Requests</label>
-                                <input type="text" id="resource-requests" placeholder="e.g., R1,R2,R3">
-                            </div>
-                            <div class="input-group">
-                                <label>Current Hold</label>
-                                <input type="text" id="current-hold" placeholder="e.g., R1,R4">
-                            </div>
-                            <div class="input-group">
-                                <label>Process Priority</label>
-                                <select id="process-priority">
-                                    <option value="1">High</option>
-                                    <option value="2">Medium</option>
-                                    <option value="3">Low</option>
-                                </select>
+                            
+                            <!-- Processes Section -->
+                            <div class="processes-section">
+                                <h4>Processes</h4>
+                                <div id="processes-container">
+                                    <!-- Process 1 -->
+                                    <div class="process-input" data-process-id="1">
+                                        <div class="process-header">
+                                            <span>Process P1</span>
+                                            <button class="remove-process-btn" onclick="removeProcess(1)">×</button>
+                                        </div>
+                                        <div class="process-details">
+                                            <div class="input-row">
+                                                <div class="input-group">
+                                                    <label>Process ID</label>
+                                                    <input type="number" class="pid-input" placeholder="101" value="101">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>Priority (1-5)</label>
+                                                    <input type="number" class="priority-input" placeholder="3" min="1" max="5" value="3">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="resource-grid">
+                                                <div class="resource-section">
+                                                    <label>Max Need</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="need-r1" placeholder="R1" min="0" value="7">
+                                                        <input type="number" class="need-r2" placeholder="R2" min="0" value="5">
+                                                        <input type="number" class="need-r3" placeholder="R3" min="0" value="3">
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="resource-section">
+                                                    <label>Currently Allocated</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="alloc-r1" placeholder="R1" min="0" value="0">
+                                                        <input type="number" class="alloc-r2" placeholder="R2" min="0" value="1">
+                                                        <input type="number" class="alloc-r3" placeholder="R3" min="0" value="0">
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="resource-section">
+                                                    <label>Current Request</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="req-r1" placeholder="R1" min="0" value="0">
+                                                        <input type="number" class="req-r2" placeholder="R2" min="0" value="1">
+                                                        <input type="number" class="req-r3" placeholder="R3" min="0" value="0">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Process 2 -->
+                                    <div class="process-input" data-process-id="2">
+                                        <div class="process-header">
+                                            <span>Process P2</span>
+                                            <button class="remove-process-btn" onclick="removeProcess(2)">×</button>
+                                        </div>
+                                        <div class="process-details">
+                                            <div class="input-row">
+                                                <div class="input-group">
+                                                    <label>Process ID</label>
+                                                    <input type="number" class="pid-input" placeholder="102" value="102">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>Priority (1-5)</label>
+                                                    <input type="number" class="priority-input" placeholder="2" min="1" max="5" value="2">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="resource-grid">
+                                                <div class="resource-section">
+                                                    <label>Max Need</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="need-r1" placeholder="R1" min="0" value="3">
+                                                        <input type="number" class="need-r2" placeholder="R2" min="0" value="2">
+                                                        <input type="number" class="need-r3" placeholder="R3" min="0" value="2">
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="resource-section">
+                                                    <label>Currently Allocated</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="alloc-r1" placeholder="R1" min="0" value="2">
+                                                        <input type="number" class="alloc-r2" placeholder="R2" min="0" value="0">
+                                                        <input type="number" class="alloc-r3" placeholder="R3" min="0" value="0">
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="resource-section">
+                                                    <label>Current Request</label>
+                                                    <div class="resource-inputs">
+                                                        <input type="number" class="req-r1" placeholder="R1" min="0" value="1">
+                                                        <input type="number" class="req-r2" placeholder="R2" min="0" value="0">
+                                                        <input type="number" class="req-r3" placeholder="R3" min="0" value="0">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button id="add-process-btn" class="add-btn">+ Add Process</button>
                             </div>
                         </div>
-                        <button class="predict-btn" id="predict-btn">Predict Deadlock</button>
+                        
+                        <!-- Real-time Info (hidden by default) -->
+                        <div id="realtime-info" class="input-section" style="display: none;">
+                            <h3>Real-time System Analysis</h3>
+                            <p>Click "Predict State" to analyze your current system using psutil data and ML model.</p>
+                        </div>
+                        
+                        <button class="predict-btn" id="predict-state-btn">Predict State</button>
+                        
+                        <!-- Results Section -->
                         <div class="prediction-result" id="prediction-result" style="display: none;">
                             <h3>Prediction Result</h3>
                             <div class="result-content">
                                 <div class="risk-level" id="risk-level"></div>
                                 <div class="confidence" id="confidence"></div>
+                                
+                                <!-- Safe Sequence -->
+                                <div id="safe-sequence-section" style="display: none; margin-top: 20px;">
+                                    <h4>Safe Sequence</h4>
+                                    <div id="safe-sequence-list"></div>
+                                </div>
+                                
+                                <!-- Deadlock Detection -->
+                                <div id="deadlock-section" style="display: none; margin-top: 20px;">
+                                    <h4 style="color: #e74c3c;">⚠️ Deadlock Detected!</h4>
+                                    <p id="deadlock-details"></p>
+                                </div>
+                                
+                                <!-- Resource Allocation Graph Visualization -->
+                                <div id="rag-visualization" style="display: none; margin-top: 20px;">
+                                    <h4>Resource Allocation Graph</h4>
+                                    <div id="rag-graph-container"></div>
+                                </div>
+                                
+                                <!-- Gantt Chart Timeline -->
+                                <div id="gantt-chart-section" style="display: none; margin-top: 25px;">
+                                    <h4>Process Execution Timeline</h4>
+                                    <div class="gantt-controls">
+                                        <button id="play-timeline-btn" class="gantt-control-btn">▶ Play Timeline</button>
+                                        <button id="pause-timeline-btn" class="gantt-control-btn" style="display: none;">⏸ Pause</button>
+                                        <button id="reset-timeline-btn" class="gantt-control-btn">↺ Reset</button>
+                                        <input type="range" id="timeline-speed" min="1" max="10" value="5" class="timeline-slider">
+                                        <label for="timeline-speed">Speed: <span id="speed-value">5x</span></label>
+                                    </div>
+                                    <div id="gantt-chart-container">
+                                        <div id="gantt-timeline"></div>
+                                        <div id="gantt-processes"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,35 +384,102 @@
                     </div>
                 </div>
 
-                <!-- Resources Page -->
-                <div id="resources-page" class="page">
-                    <div class="resources-container">
-                        <h2>Resource Allocation Graph</h2>
-                        <div class="graph-container">
-                            <div id="resource-graph"></div>
+                <!-- Resource Allocation Graph Page -->
+                <div id="premium-page" class="page">
+                    <div class="premium-container">
+                        <!-- Header -->
+                        <div class="premium-header">
+                            <h1>Resource Allocation Graph</h1>
+                            <div class="status-badge">
+                                <div class="status-dot"></div>
+                                <span>System Online</span>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- About Page -->
-                <div id="about-page" class="page">
-                    <div class="about-container">
-                        <h2>About Deadlock Predictor</h2>
-                        <div class="about-content">
-                            <p>This system uses machine learning to predict deadlock conditions in operating systems based on resource allocation patterns.</p>
-                            <h3>Features:</h3>
-                            <ul>
-                                <li>Real-time deadlock prediction</li>
-                                <li>Resource allocation visualization</li>
-                                <li>Model performance insights</li>
-                                <li>Historical data analysis</li>
-                            </ul>
-                            <h3>Technology Stack:</h3>
-                            <ul>
-                                <li>Python (scikit-learn, pandas)</li>
-                                <li>HTML5, CSS3, JavaScript</li>
-                                <li>Chart.js for data visualization</li>
-                            </ul>
+                        <!-- System Stats Cards -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">CPU Usage</div>
+                                <div class="stat-value" id="premium-cpu-stat">0%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Memory Usage</div>
+                                <div class="stat-value" id="premium-memory-stat">0%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Total Processes</div>
+                                <div class="stat-value" id="premium-processes-stat">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Active Resources</div>
+                                <div class="stat-value" id="premium-resources-stat">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Resource Graph Card -->
+                        <div class="card">
+                            <h2 class="card-title">Resource Allocation Graph</h2>
+                            <p class="card-subtitle">Visual representation of process-resource relationships</p>
+                            
+                            <div class="graph-info" id="graph-process-info" style="margin-bottom: 16px; padding: 12px; background: rgba(144, 221, 240, 0.1); border-radius: 8px; border-left: 3px solid #2C666E;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <strong>Currently Displayed Processes:</strong>
+                                    <span style="font-size: 12px; color: #2C666E; background: rgba(144, 221, 240, 0.3); padding: 2px 8px; border-radius: 12px;">Real system processes</span>
+                                </div>
+                                <div id="process-mapping" style="margin-top: 8px; font-size: 14px; color: #2C666E;"></div>
+                                <div style="margin-top: 10px; font-size: 12px; color: #07393C; padding: 8px; background: rgba(7, 57, 60, 0.05); border-radius: 6px;">
+                                    <strong>Live Data:</strong> These are actual processes running on your system, collected via psutil in real-time. The graph shows a dynamic subset of your real processes and their current resource allocation relationships.
+                                </div>
+                            </div>
+                            
+                            <div class="graph-info" id="resource-info" style="margin-bottom: 16px; padding: 12px; background: rgba(44, 102, 110, 0.1); border-radius: 8px; border-left: 3px solid #07393C; color: #07393C;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>Active Resources:</strong> Loading...
+                                    </div>
+                                    <button id="sync-graph-btn" class="sync-button" title="Click to refresh graph with current system state (or press 'S' key)" style="background: #07393C; color: white; border: none; padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.3s ease;">
+                                        🔄 Sync Now
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="graph-container">
+                                <div class="nodes-container" id="premium-nodes-container">
+                                    <!-- Nodes will be dynamically generated -->
+                                    <svg class="arrows-svg" id="premium-arrows-svg"></svg>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-container">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="processes">Processes</button>
+                                <button class="filter-btn" data-filter="resources">Resources</button>
+                                <button class="filter-btn" data-filter="allocations">Allocations</button>
+                                <button class="filter-btn" data-filter="requests">Requests</button>
+                            </div>
+                        </div>
+
+                        <!-- Running Processes Table -->
+                        <div class="card">
+                            <h2 class="card-title">Running Processes</h2>
+                            <p class="card-subtitle">Detailed process information and resource usage</p>
+                            
+                            <div class="table-container">
+                                <table id="premium-processes-table">
+                                    <thead>
+                                        <tr>
+                                            <th>PID</th>
+                                            <th>Process Name</th>
+                                            <th>Status</th>
+                                            <th style="text-align: right;">CPU %</th>
+                                            <th style="text-align: right;">Memory %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="premium-processes-tbody">
+                                        <!-- Rows will be dynamically populated -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

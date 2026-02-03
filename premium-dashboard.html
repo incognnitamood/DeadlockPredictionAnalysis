@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium System Dashboard</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #F0EDEE;
+            color: #0A090C;
+            line-height: 1.6;
+        }
+
+        /* Container Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0A090C;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #07393C;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #90DDF0;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Card Styles */
+        .card {
+            background: #FFFFFF;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0A090C;
+            margin-bottom: 16px;
+        }
+
+        .card-subtitle {
+            font-size: 15px;
+            color: #2C666E;
+            margin-bottom: 20px;
+        }
+
+        /* Graph Section */
+        .graph-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 24px;
+            background: #FFFFFF;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .nodes-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .node {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(144, 221, 240, 0.3);
+        }
+
+        .process-node {
+            background: #07393C;
+            width: 50px;
+            height: 50px;
+        }
+
+        .resource-node {
+            background: #2C666E;
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+        }
+
+        .arrows-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* System Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0A090C;
+            margin: 8px 0;
+        }
+
+        .stat-label {
+            font-size: 15px;
+            color: #2C666E;
+        }
+
+        /* Processes Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+
+        thead {
+            background: #07393C;
+            color: white;
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        th:first-child {
+            border-top-left-radius: 14px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 14px;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: rgba(144, 221, 240, 0.1);
+        }
+
+        tbody tr:hover {
+            background-color: rgba(144, 221, 240, 0.2);
+            box-shadow: inset 0 0 0 1px rgba(144, 221, 240, 0.3);
+        }
+
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(44, 102, 110, 0.1);
+        }
+
+        .status-badge-table {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-running {
+            background: rgba(44, 102, 110, 0.15);
+            color: #07393C;
+        }
+
+        .status-stopped {
+            background: rgba(7, 57, 60, 0.15);
+            color: #07393C;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>System Resource Dashboard</h1>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>System Online</span>
+            </div>
+        </div>
+
+        <!-- System Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">CPU Usage</div>
+                <div class="stat-value" id="cpu-stat">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Memory Usage</div>
+                <div class="stat-value" id="memory-stat">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Processes</div>
+                <div class="stat-value" id="processes-stat">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Resources</div>
+                <div class="stat-value" id="resources-stat">0</div>
+            </div>
+        </div>
+
+        <!-- Resource Graph Card -->
+        <div class="card">
+            <h2 class="card-title">Resource Allocation Graph</h2>
+            <p class="card-subtitle">Visual representation of process-resource relationships</p>
+            
+            <div class="graph-container">
+                <div class="nodes-container" id="nodes-container">
+                    <!-- Nodes will be dynamically generated -->
+                    <svg class="arrows-svg" id="arrows-svg"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Running Processes Table -->
+        <div class="card">
+            <h2 class="card-title">Running Processes</h2>
+            <p class="card-subtitle">Detailed process information and resource usage</p>
+            
+            <div class="table-container">
+                <table id="processes-table">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Process Name</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">CPU %</th>
+                            <th style="text-align: right;">Memory %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processes-tbody">
+                        <!-- Rows will be dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let processes = [];
+        let resources = [];
+        let allocations = [];
+        let requests = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeGraph();
+            updateDashboard();
+            
+            // Auto-refresh every 5 seconds
+            setInterval(updateDashboard, 5000);
+            
+            // Handle resize events
+            window.addEventListener('resize', debounce(drawArrows, 300));
+            window.addEventListener('scroll', debounce(drawArrows, 100));
+        });
+
+        // Initialize graph with sample data
+        function initializeGraph() {
+            // Sample processes
+            processes = [
+                { id: 'P1', x: 150, y: 80, name: 'Web Server' },
+                { id: 'P2', x: 300, y: 80, name: 'Database' },
+                { id: 'P3', x: 450, y: 80, name: 'Cache Service' }
+            ];
+
+            // Sample resources
+            resources = [
+                { id: 'R1', x: 150, y: 200, name: 'CPU Core 1' },
+                { id: 'R2', x: 300, y: 200, name: 'Memory Bank' },
+                { id: 'R3', x: 450, y: 200, name: 'Disk I/O' }
+            ];
+
+            // Sample allocations (solid arrows)
+            allocations = [
+                { from: 'P1', to: 'R1' },
+                { from: 'P2', to: 'R2' },
+                { from: 'P3', to: 'R3' }
+            ];
+
+            // Sample requests (dashed arrows)
+            requests = [
+                { from: 'P1', to: 'R2' },
+                { from: 'P2', to: 'R3' },
+                { from: 'P3', to: 'R1' }
+            ];
+
+            renderGraph();
+        }
+
+        // Render the graph with nodes and arrows
+        function renderGraph() {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '<svg class="arrows-svg" id="arrows-svg"></svg>';
+            
+            // Render processes
+            processes.forEach(process => {
+                const node = document.createElement('div');
+                node.className = 'node process-node';
+                node.id = process.id;
+                node.textContent = process.id;
+                node.style.left = `${process.x - 25}px`;
+                node.style.top = `${process.y - 25}px`;
+                container.appendChild(node);
+            });
+
+            // Render resources
+            resources.forEach(resource => {
+                const node = document.createElement('div');
+                node.className = 'node resource-node';
+                node.id = resource.id;
+                node.textContent = resource.id;
+                node.style.left = `${resource.x - 30}px`;
+                node.style.top = `${resource.y - 30}px`;
+                container.appendChild(node);
+            });
+
+            // Draw arrows
+            drawArrows();
+        }
+
+        // Draw SVG arrows between nodes
+        function drawArrows() {
+            const svg = document.getElementById('arrows-svg');
+            svg.innerHTML = '';
+            
+            // Draw allocations (solid arrows in #2C666E)
+            allocations.forEach(allocation => {
+                const fromNode = document.getElementById(allocation.from);
+                const toNode = document.getElementById(allocation.to);
+                if (fromNode && toNode) {
+                    drawArrow(svg, fromNode, toNode, '#2C666E', false);
+                }
+            });
+
+            // Draw requests (dashed arrows in #90DDF0)
+            requests.forEach(request => {
+                const fromNode = document.getElementById(request.from);
+                const toNode = document.getElementById(request.to);
+                if (fromNode && toNode) {
+                    drawArrow(svg, fromNode, toNode, '#90DDF0', true);
+                }
+            });
+        }
+
+        // Draw a single arrow between two nodes
+        function drawArrow(svg, fromNode, toNode, color, dashed) {
+            const fromRect = fromNode.getBoundingClientRect();
+            const toRect = toNode.getBoundingClientRect();
+            const containerRect = svg.getBoundingClientRect();
+
+            const startX = fromRect.left + fromRect.width/2 - containerRect.left;
+            const startY = fromRect.top + fromRect.height/2 - containerRect.top;
+            const endX = toRect.left + toRect.width/2 - containerRect.left;
+            const endY = toRect.top + toRect.height/2 - containerRect.top;
+
+            // Create arrowhead marker
+            let marker = svg.querySelector(`#arrowhead-${color.replace('#', '')}`);
+            if (!marker) {
+                marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+                marker.setAttribute('id', `arrowhead-${color.replace('#', '')}`);
+                marker.setAttribute('markerWidth', '10');
+                marker.setAttribute('markerHeight', '10');
+                marker.setAttribute('refX', '9');
+                marker.setAttribute('refY', '3');
+                marker.setAttribute('orient', 'auto');
+                marker.setAttribute('markerUnits', 'strokeWidth');
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M0,0 L0,6 L9,3 z');
+                path.setAttribute('fill', color);
+                marker.appendChild(path);
+                svg.appendChild(marker);
+            }
+
+            // Create line
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', endX);
+            line.setAttribute('y2', endY);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('marker-end', `url(#arrowhead-${color.replace('#', '')})`);
+            
+            if (dashed) {
+                line.setAttribute('stroke-dasharray', '5,5');
+            }
+            
+            svg.appendChild(line);
+        }
+
+        // Debounce function for resize/scroll events
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Update dashboard with mock data
+        function updateDashboard() {
+            // Update system stats with smooth transitions
+            const cpuElement = document.getElementById('cpu-stat');
+            const memoryElement = document.getElementById('memory-stat');
+            const processesElement = document.getElementById('processes-stat');
+            const resourcesElement = document.getElementById('resources-stat');
+            
+            const newCpu = (Math.random() * 80 + 10).toFixed(1);
+            const newMemory = (Math.random() * 70 + 20).toFixed(1);
+            const newProcesses = Math.floor(Math.random() * 200 + 50);
+            const newResources = Math.floor(Math.random() * 10 + 5);
+
+            // Smooth number transitions
+            animateValue(cpuElement, parseFloat(cpuElement.textContent), parseFloat(newCpu), 1000);
+            animateValue(memoryElement, parseFloat(memoryElement.textContent), parseFloat(newMemory), 1000);
+            animateValue(processesElement, parseInt(processesElement.textContent), newProcesses, 1000);
+            animateValue(resourcesElement, parseInt(resourcesElement.textContent), newResources, 1000);
+
+            // Update processes table
+            updateProcessesTable();
+        }
+
+        // Smooth number animation
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let currentValue = start;
+            
+            const timer = setInterval(function() {
+                currentValue += increment;
+                if ((increment > 0 && currentValue >= end) || (increment < 0 && currentValue <= end)) {
+                    clearInterval(timer);
+                    currentValue = end;
+                }
+                
+                if (element.id.includes('stat') && !element.id.includes('processes') && !element.id.includes('resources')) {
+                    element.textContent = `${currentValue.toFixed(1)}%`;
+                } else {
+                    element.textContent = Math.round(currentValue);
+                }
+            }, 16);
+        }
+
+        // Update processes table with mock data
+        function updateProcessesTable() {
+            const tbody = document.getElementById('processes-tbody');
+            tbody.innerHTML = '';
+
+            // Generate mock processes
+            const mockProcesses = [
+                { pid: 1234, name: 'nginx', status: 'running', cpu: 12.5, memory: 8.2 },
+                { pid: 5678, name: 'mysql', status: 'running', cpu: 25.3, memory: 15.7 },
+                { pid: 9012, name: 'redis-server', status: 'running', cpu: 8.1, memory: 3.4 },
+                { pid: 3456, name: 'node-app', status: 'running', cpu: 45.2, memory: 22.1 },
+                { pid: 7890, name: 'systemd', status: 'stopped', cpu: 0.0, memory: 1.2 },
+                { pid: 2345, name: 'dockerd', status: 'running', cpu: 18.7, memory: 12.3 },
+                { pid: 6789, name: 'kubelet', status: 'running', cpu: 32.1, memory: 18.9 }
+            ];
+
+            mockProcesses.forEach(process => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${process.pid}</td>
+                    <td>${process.name}</td>
+                    <td><span class="status-badge-table status-${process.status}">${process.status}</span></td>
+                    <td style="text-align: right;">${process.cpu.toFixed(1)}%</td>
+                    <td style="text-align: right;">${process.memory.toFixed(1)}%</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
