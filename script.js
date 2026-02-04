@@ -108,7 +108,9 @@ function switchPage(page) {
         case 'upload':
             initializeUpload();
             break;
-        // Removed 'about' case
+        case 'simulator':
+            initWorkloadSimulator();
+            break;
     }
 }
 
@@ -118,8 +120,8 @@ function getPageTitle(page) {
         'upload': 'Upload Dataset',
         'prediction': 'Live Prediction',
         'insights': 'Model Insights',
-        'resources': 'Resource Graph'
-        // Removed 'about' entry
+        'resources': 'Resource Graph',
+        'simulator': 'Load Simulator'
     };
     return titles[page] || 'Page';
 }
@@ -234,7 +236,7 @@ function initializeCharts() {
             data: {
                 labels: ['1h', '2h', '3h', '4h', '5h', '6h', '7h', '8h'],
                 datasets: [{
-                    label: 'Deadlock Probability %',
+                    label: 'System Risk Score',
                     data: [8, 12, 15, 11, 9, 14, 18, 12],
                     borderColor: 'rgba(231, 76, 60, 1)',
                     backgroundColor: 'rgba(231, 76, 60, 0.1)',
@@ -627,14 +629,10 @@ function collectManualInput() {
     };
 }
 
-// Global variables for Gantt chart
-let ganttTimeline = null;
-let ganttAnimation = null;
-let currentTimelinePosition = 0;
-let timelineSpeed = 5;
-
 // Display Banker's algorithm results
 function displayBankersResults(result) {
+    console.log('displayBankersResults called with:', result);
+    
     // Display safe sequence
     const safeSequenceSection = document.getElementById('safe-sequence-section');
     const safeSequenceList = document.getElementById('safe-sequence-list');
@@ -679,293 +677,6 @@ function displayBankersResults(result) {
             ragSection.style.display = 'none';
         }
     }
-    
-    // Generate and display Gantt chart
-    generateGanttChart(result);
-}
-
-// Generate Gantt chart based on prediction results
-function generateGanttChart(result) {
-    console.log('Generating Gantt chart with result:', result);
-    const ganttSection = document.getElementById('gantt-chart-section');
-    const timelineContainer = document.getElementById('gantt-timeline');
-    const processesContainer = document.getElementById('gantt-processes');
-    
-    // Check if all required elements exist
-    if (!ganttSection || !timelineContainer || !processesContainer) {
-        console.warn('Gantt chart elements not found in DOM');
-        return;
-    }
-    
-    if (!result.processes || result.processes.length === 0) {
-        console.log('No processes found, hiding Gantt chart');
-        ganttSection.style.display = 'none';
-        return;
-    }
-    
-    console.log('Showing Gantt chart section');
-    ganttSection.style.display = 'block';
-    
-    // Clear existing content
-    timelineContainer.innerHTML = '';
-    processesContainer.innerHTML = '';
-    
-    // Create timeline markers (0s to 20s)
-    const totalTime = 20;
-    for (let i = 0; i <= totalTime; i += 2) {
-        const marker = document.createElement('div');
-        marker.style.position = 'relative';
-        marker.style.flex = '1';
-        marker.style.textAlign = 'center';
-        marker.textContent = `${i}s`;
-        timelineContainer.appendChild(marker);
-    }
-    
-    // Create process rows
-    result.processes.forEach((process, index) => {
-        const processRow = document.createElement('div');
-        processRow.className = 'gantt-process-row';
-        
-        const processLabel = document.createElement('div');
-        processLabel.className = 'gantt-process-label';
-        processLabel.textContent = `P${process.pid}`;
-        processRow.appendChild(processLabel);
-        
-        const barsContainer = document.createElement('div');
-        barsContainer.className = 'gantt-bars-container';
-        processRow.appendChild(barsContainer);
-        
-        // Generate timeline bars for this process
-        generateProcessTimelineBars(barsContainer, process, result.state, index);
-        
-        processesContainer.appendChild(processRow);
-    });
-    
-    // Add event markers if there are system events
-    if (result.events) {
-        addEventMarkers(result.events);
-    }
-    
-    // Initialize timeline controls
-    initializeTimelineControls();
-}
-
-// Generate timeline bars for a process
-function generateProcessTimelineBars(container, process, systemState, processIndex) {
-    const totalTime = 20; // 20 seconds total timeline
-    const pid = process.pid;
-    
-    // Different scenarios based on system state
-    if (systemState === 'DEADLOCK') {
-        // Deadlock scenario - process gets cut off
-        const runningTime = 8 + (processIndex * 2); // Different start times
-        const barWidth = (runningTime / totalTime) * 100;
-        
-        const runningBar = document.createElement('div');
-        runningBar.className = 'gantt-bar running';
-        runningBar.style.width = `${barWidth}%`;
-        runningBar.style.left = '0%';
-        runningBar.textContent = `Running (${runningTime}s)`;
-        container.appendChild(runningBar);
-        
-        // Deadlock marker
-        const deadlockMarker = document.createElement('div');
-        deadlockMarker.className = 'gantt-bar deadlock partial';
-        deadlockMarker.style.width = '8px';
-        deadlockMarker.style.left = `${barWidth}%`;
-        deadlockMarker.style.height = '100%';
-        deadlockMarker.innerHTML = '💥';
-        container.appendChild(deadlockMarker);
-        
-    } else if (systemState === 'UNSAFE') {
-        // Unsafe scenario - mix of running and unsafe periods
-        const segments = [
-            { type: 'running', duration: 6, label: 'Running' },
-            { type: 'unsafe', duration: 4, label: 'Unsafe' },
-            { type: 'waiting', duration: 3, label: 'Waiting' },
-            { type: 'running', duration: 4, label: 'Running' }
-        ];
-        
-        let currentTime = 0;
-        segments.forEach(segment => {
-            if (currentTime < totalTime) {
-                const segmentWidth = (segment.duration / totalTime) * 100;
-                const bar = document.createElement('div');
-                bar.className = `gantt-bar ${segment.type}`;
-                bar.style.width = `${segmentWidth}%`;
-                bar.style.left = `${(currentTime / totalTime) * 100}%`;
-                bar.textContent = segment.label;
-                container.appendChild(bar);
-                currentTime += segment.duration;
-            }
-        });
-        
-    } else {
-        // Safe scenario - mostly running with some waiting
-        const segments = [
-            { type: 'waiting', duration: 2, label: 'Init' },
-            { type: 'running', duration: 12, label: 'Running' },
-            { type: 'waiting', duration: 3, label: 'Cleanup' }
-        ];
-        
-        let currentTime = 0;
-        segments.forEach(segment => {
-            if (currentTime < totalTime) {
-                const segmentWidth = (segment.duration / totalTime) * 100;
-                const bar = document.createElement('div');
-                bar.className = `gantt-bar ${segment.type}`;
-                bar.style.width = `${segmentWidth}%`;
-                bar.style.left = `${(currentTime / totalTime) * 100}%`;
-                bar.textContent = segment.label;
-                container.appendChild(bar);
-                currentTime += segment.duration;
-            }
-        });
-    }
-    
-    // Add priority indicator
-    const priorityIndicator = document.createElement('div');
-    priorityIndicator.style.position = 'absolute';
-    priorityIndicator.style.right = '5px';
-    priorityIndicator.style.top = '2px';
-    priorityIndicator.style.fontSize = '10px';
-    priorityIndicator.style.color = '#6c757d';
-    priorityIndicator.textContent = `P${process.priority || 3}`;
-    container.appendChild(priorityIndicator);
-}
-
-// Add event markers to timeline
-function addEventMarkers(events) {
-    const timelineContainer = document.getElementById('gantt-timeline');
-    const processesContainer = document.getElementById('gantt-processes');
-    
-    events.forEach(event => {
-        // Add time marker to timeline
-        const timeMarker = document.createElement('div');
-        timeMarker.className = 'gantt-time-marker';
-        timeMarker.style.left = `${(event.time / 20) * 100}%`;
-        timelineContainer.appendChild(timeMarker);
-        
-        // Add event description
-        const eventMarker = document.createElement('div');
-        eventMarker.className = 'gantt-event-marker';
-        eventMarker.style.left = `${(event.time / 20) * 100}%`;
-        eventMarker.textContent = event.description;
-        timelineContainer.appendChild(eventMarker);
-    });
-}
-
-// Initialize timeline controls
-function initializeTimelineControls() {
-    console.log('Initializing timeline controls');
-    const playBtn = document.getElementById('play-timeline-btn');
-    const pauseBtn = document.getElementById('pause-timeline-btn');
-    const resetBtn = document.getElementById('reset-timeline-btn');
-    const speedSlider = document.getElementById('timeline-speed');
-    const speedValue = document.getElementById('speed-value');
-    
-    // Check if all elements exist
-    if (!playBtn || !pauseBtn || !resetBtn || !speedSlider || !speedValue) {
-        console.warn('Timeline control elements not found in DOM');
-        return;
-    }
-    
-    console.log('Timeline controls initialized successfully');
-    
-    // Speed slider
-    speedSlider.addEventListener('input', function() {
-        timelineSpeed = parseInt(this.value);
-        speedValue.textContent = `${timelineSpeed}x`;
-        if (ganttAnimation) {
-            // Restart animation with new speed
-            stopTimelineAnimation();
-            startTimelineAnimation();
-        }
-    });
-    
-    // Play button
-    playBtn.addEventListener('click', function() {
-        this.style.display = 'none';
-        pauseBtn.style.display = 'inline-block';
-        startTimelineAnimation();
-    });
-    
-    // Pause button
-    pauseBtn.addEventListener('click', function() {
-        this.style.display = 'none';
-        playBtn.style.display = 'inline-block';
-        stopTimelineAnimation();
-    });
-    
-    // Reset button
-    resetBtn.addEventListener('click', function() {
-        stopTimelineAnimation();
-        playBtn.style.display = 'inline-block';
-        pauseBtn.style.display = 'none';
-        resetTimeline();
-    });
-}
-
-// Start timeline animation
-function startTimelineAnimation() {
-    const processesContainer = document.getElementById('gantt-processes');
-    
-    // Check if container exists
-    if (!processesContainer) {
-        console.warn('Gantt processes container not found');
-        return;
-    }
-    
-    const indicator = document.createElement('div');
-    indicator.className = 'timeline-indicator';
-    indicator.id = 'timeline-indicator';
-    processesContainer.appendChild(indicator);
-    
-    currentTimelinePosition = 0;
-    const totalTime = 20; // seconds
-    const animationDuration = (totalTime * 1000) / timelineSpeed; // ms
-    
-    const startTime = Date.now();
-    
-    function animate() {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / animationDuration, 1);
-        currentTimelinePosition = progress * 100;
-        
-        indicator.style.left = `${currentTimelinePosition}%`;
-        
-        if (progress < 1) {
-            ganttAnimation = requestAnimationFrame(animate);
-        } else {
-            // Animation complete
-            const playBtn = document.getElementById('play-timeline-btn');
-            const pauseBtn = document.getElementById('pause-timeline-btn');
-            if (playBtn && pauseBtn) {
-                pauseBtn.style.display = 'none';
-                playBtn.style.display = 'inline-block';
-            }
-            ganttAnimation = null;
-        }
-    }
-    
-    ganttAnimation = requestAnimationFrame(animate);
-}
-
-// Stop timeline animation
-function stopTimelineAnimation() {
-    if (ganttAnimation) {
-        cancelAnimationFrame(ganttAnimation);
-        ganttAnimation = null;
-    }
-}
-
-// Reset timeline
-function resetTimeline() {
-    const indicator = document.getElementById('timeline-indicator');
-    if (indicator) {
-        indicator.remove();
-    }
-    currentTimelinePosition = 0;
 }
 
 // Add new process input section
@@ -1033,7 +744,6 @@ function removeProcess(processId) {
     const processDiv = document.querySelector(`.process-input[data-process-id="${processId}"]`);
     if (processDiv && document.querySelectorAll('.process-input').length > 1) {
         processDiv.remove();
-        // Renumber remaining processes
         renumberProcesses();
     }
 }
@@ -2064,4 +1774,373 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ===== CPU/Memory/IO Load Emulator (Process Simulator) =====
+
+let simulatorDebounceTimer = null;
+let simulatedProcesses = [];
+
+function initWorkloadSimulator() {
+    const cpuSlider = document.getElementById('cpu-load-slider');
+    const memorySlider = document.getElementById('memory-load-slider');
+    const ioSlider = document.getElementById('io-load-slider');
+    const processCountSlider = document.getElementById('process-count-slider');
+    const workloadTypeSelect = document.getElementById('workload-type-select');
+    const resetBtn = document.getElementById('reset-simulator-btn');
+    
+    if (!cpuSlider || !memorySlider || !ioSlider || !processCountSlider || !workloadTypeSelect) {
+        console.warn('Simulator elements not found');
+        return;
+    }
+    
+    // Slider event listeners
+    cpuSlider.addEventListener('input', function() {
+        document.getElementById('cpu-load-value').textContent = `${this.value}%`;
+        onSimulatorChange();
+    });
+    
+    memorySlider.addEventListener('input', function() {
+        document.getElementById('memory-load-value').textContent = `${this.value}%`;
+        onSimulatorChange();
+    });
+    
+    ioSlider.addEventListener('input', function() {
+        document.getElementById('io-load-value').textContent = `${this.value}%`;
+        onSimulatorChange();
+    });
+    
+    processCountSlider.addEventListener('input', function() {
+        document.getElementById('process-count-value').textContent = this.value;
+        onSimulatorChange();
+    });
+    
+    workloadTypeSelect.addEventListener('change', function() {
+        onSimulatorChange();
+    });
+    
+    // Reset button
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSimulator);
+    }
+    
+    // Initial generation
+    onSimulatorChange();
+}
+
+function resetSimulator() {
+    document.getElementById('cpu-load-slider').value = 50;
+    document.getElementById('memory-load-slider').value = 50;
+    document.getElementById('io-load-slider').value = 50;
+    document.getElementById('process-count-slider').value = 10;
+    document.getElementById('workload-type-select').value = 'mixed';
+    
+    document.getElementById('cpu-load-value').textContent = '50%';
+    document.getElementById('memory-load-value').textContent = '50%';
+    document.getElementById('io-load-value').textContent = '50%';
+    document.getElementById('process-count-value').textContent = '10';
+    
+    onSimulatorChange();
+}
+
+function onSimulatorChange() {
+    // Debounce API calls by 400ms
+    if (simulatorDebounceTimer) {
+        clearTimeout(simulatorDebounceTimer);
+    }
+    
+    simulatorDebounceTimer = setTimeout(() => {
+        generateSimulatedProcesses();
+        updateSimulatorUI();
+        callRealtimePredictionAPI();
+    }, 400);
+}
+
+function generateSimulatedProcesses() {
+    const cpuLoad = parseInt(document.getElementById('cpu-load-slider').value);
+    const memoryLoad = parseInt(document.getElementById('memory-load-slider').value);
+    const ioLoad = parseInt(document.getElementById('io-load-slider').value);
+    const processCount = parseInt(document.getElementById('process-count-slider').value);
+    const workloadType = document.getElementById('workload-type-select').value;
+    
+    simulatedProcesses = [];
+    
+    for (let i = 0; i < processCount; i++) {
+        const profile = getProcessProfileByWorkloadType(workloadType, cpuLoad, memoryLoad, ioLoad);
+        
+        simulatedProcesses.push({
+            pid: 5000 + i,
+            cpu_usage: profile.cpu,
+            memory_usage: profile.memory,
+            io_usage: profile.io,
+            workload_type: profile.type
+        });
+    }
+    
+    return simulatedProcesses;
+}
+
+function getProcessProfileByWorkloadType(type, baseCpu, baseMemory, baseIo) {
+    const variance = () => (Math.random() - 0.5) * 20;
+    const clamp = (val) => Math.max(0, Math.min(100, val));
+    
+    let cpu, memory, io, processType;
+    
+    switch (type) {
+        case 'cpu-bound':
+            // High CPU, moderate memory, low IO
+            cpu = clamp(baseCpu * 1.5 + variance());
+            memory = clamp(baseMemory * 0.6 + variance());
+            io = clamp(baseIo * 0.3 + variance());
+            processType = 'cpu-bound';
+            break;
+            
+        case 'io-bound':
+            // High IO, low CPU, moderate memory
+            cpu = clamp(baseCpu * 0.3 + variance());
+            memory = clamp(baseMemory * 0.6 + variance());
+            io = clamp(baseIo * 1.5 + variance());
+            processType = 'io-bound';
+            break;
+            
+        case 'memory-heavy':
+            // High memory, low CPU and IO
+            cpu = clamp(baseCpu * 0.3 + variance());
+            memory = clamp(baseMemory * 1.5 + variance());
+            io = clamp(baseIo * 0.3 + variance());
+            processType = 'memory-heavy';
+            break;
+            
+        case 'mixed':
+        default:
+            // Randomized patterns
+            const patterns = ['cpu-bound', 'io-bound', 'memory-heavy', 'balanced'];
+            const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+            
+            switch (randomPattern) {
+                case 'cpu-bound':
+                    cpu = clamp(baseCpu * (1.2 + Math.random() * 0.5) + variance());
+                    memory = clamp(baseMemory * (0.4 + Math.random() * 0.4) + variance());
+                    io = clamp(baseIo * (0.2 + Math.random() * 0.3) + variance());
+                    break;
+                case 'io-bound':
+                    cpu = clamp(baseCpu * (0.2 + Math.random() * 0.3) + variance());
+                    memory = clamp(baseMemory * (0.4 + Math.random() * 0.4) + variance());
+                    io = clamp(baseIo * (1.2 + Math.random() * 0.5) + variance());
+                    break;
+                case 'memory-heavy':
+                    cpu = clamp(baseCpu * (0.2 + Math.random() * 0.3) + variance());
+                    memory = clamp(baseMemory * (1.2 + Math.random() * 0.5) + variance());
+                    io = clamp(baseIo * (0.2 + Math.random() * 0.3) + variance());
+                    break;
+                default:
+                    cpu = clamp(baseCpu * (0.7 + Math.random() * 0.6) + variance());
+                    memory = clamp(baseMemory * (0.7 + Math.random() * 0.6) + variance());
+                    io = clamp(baseIo * (0.7 + Math.random() * 0.6) + variance());
+            }
+            processType = 'mixed';
+            break;
+    }
+    
+    return {
+        cpu: Math.round(cpu * 10) / 10,
+        memory: Math.round(memory * 10) / 10,
+        io: Math.round(io * 10) / 10,
+        type: processType
+    };
+}
+
+function updateSimulatorUI() {
+    const container = document.getElementById('simulated-processes-container');
+    const countBadge = document.getElementById('sim-process-count-badge');
+    
+    if (!container) return;
+    
+    // Update count badge
+    if (countBadge) {
+        countBadge.textContent = simulatedProcesses.length;
+    }
+    
+    // Render process cards
+    container.innerHTML = simulatedProcesses.map(proc => `
+        <div class="sim-process-card">
+            <div class="sim-process-header">
+                <span class="sim-process-pid">PID ${proc.pid}</span>
+                <span class="sim-process-type ${proc.workload_type}">${proc.workload_type.replace('-', ' ')}</span>
+            </div>
+            <div class="sim-process-stats">
+                <div class="sim-stat-row">
+                    <span class="sim-stat-icon">💻</span>
+                    <div class="sim-stat-bar">
+                        <div class="sim-stat-fill cpu" style="width: ${proc.cpu_usage}%"></div>
+                    </div>
+                    <span class="sim-stat-value">${proc.cpu_usage.toFixed(1)}%</span>
+                </div>
+                <div class="sim-stat-row">
+                    <span class="sim-stat-icon">🧠</span>
+                    <div class="sim-stat-bar">
+                        <div class="sim-stat-fill memory" style="width: ${proc.memory_usage}%"></div>
+                    </div>
+                    <span class="sim-stat-value">${proc.memory_usage.toFixed(1)}%</span>
+                </div>
+                <div class="sim-stat-row">
+                    <span class="sim-stat-icon">💾</span>
+                    <div class="sim-stat-bar">
+                        <div class="sim-stat-fill io" style="width: ${proc.io_usage}%"></div>
+                    </div>
+                    <span class="sim-stat-value">${proc.io_usage.toFixed(1)}%</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function callRealtimePredictionAPI() {
+    const cpuPercent = parseInt(document.getElementById('cpu-load-slider').value);
+    const memoryPercent = parseInt(document.getElementById('memory-load-slider').value);
+    const ioPercent = parseInt(document.getElementById('io-load-slider').value);
+    const numProcesses = parseInt(document.getElementById('process-count-slider').value);
+    
+    // Show analyzing state
+    const statusEl = document.getElementById('sim-prediction-status');
+    const labelEl = document.getElementById('sim-prediction-label');
+    
+    if (statusEl) {
+        statusEl.className = 'prediction-status analyzing';
+        statusEl.innerHTML = `
+            <span class="status-icon">⏳</span>
+            <span class="status-text">Analyzing workload...</span>
+        `;
+    }
+    if (labelEl) {
+        labelEl.textContent = '--';
+        labelEl.className = 'prediction-label';
+    }
+    
+    const payload = {
+        cpu_percent: cpuPercent,
+        memory_percent: memoryPercent,
+        io_percent: ioPercent,
+        num_processes: numProcesses,
+        processes: simulatedProcesses
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE}/predict-realtime`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        updateSimulatorPredictionDisplay(data);
+        
+    } catch (error) {
+        console.error('Prediction API error:', error);
+        // Use fallback prediction based on load levels
+        const fallbackPrediction = generateFallbackPrediction(cpuPercent, memoryPercent, ioPercent, numProcesses);
+        updateSimulatorPredictionDisplay(fallbackPrediction);
+    }
+}
+
+function generateFallbackPrediction(cpu, memory, io, processes) {
+    // Simple heuristic-based prediction when API is unavailable
+    const totalLoad = (cpu + memory + io) / 3;
+    const processRisk = processes / 50;
+    const riskScore = (totalLoad * 0.7 + processRisk * 30);
+    
+    let prediction, probabilities;
+    
+    if (riskScore < 40) {
+        prediction = 'SAFE';
+        probabilities = {
+            SAFE: 70 + Math.random() * 20,
+            UNSAFE: 10 + Math.random() * 15,
+            DEADLOCK: Math.random() * 10
+        };
+    } else if (riskScore < 70) {
+        prediction = 'UNSAFE';
+        probabilities = {
+            SAFE: 20 + Math.random() * 20,
+            UNSAFE: 50 + Math.random() * 25,
+            DEADLOCK: 10 + Math.random() * 15
+        };
+    } else {
+        prediction = 'DEADLOCK-PRONE';
+        probabilities = {
+            SAFE: Math.random() * 15,
+            UNSAFE: 20 + Math.random() * 20,
+            DEADLOCK: 55 + Math.random() * 25
+        };
+    }
+    
+    // Normalize probabilities
+    const total = probabilities.SAFE + probabilities.UNSAFE + probabilities.DEADLOCK;
+    probabilities.SAFE = (probabilities.SAFE / total) * 100;
+    probabilities.UNSAFE = (probabilities.UNSAFE / total) * 100;
+    probabilities.DEADLOCK = (probabilities.DEADLOCK / total) * 100;
+    
+    return { prediction, probabilities };
+}
+
+function updateSimulatorPredictionDisplay(data) {
+    const statusEl = document.getElementById('sim-prediction-status');
+    const labelEl = document.getElementById('sim-prediction-label');
+    const safeBar = document.getElementById('sim-safe-bar');
+    const unsafeBar = document.getElementById('sim-unsafe-bar');
+    const deadlockBar = document.getElementById('sim-deadlock-bar');
+    const safeProb = document.getElementById('sim-safe-prob');
+    const unsafeProb = document.getElementById('sim-unsafe-prob');
+    const deadlockProb = document.getElementById('sim-deadlock-prob');
+    
+    const prediction = data.prediction || 'UNKNOWN';
+    const probs = data.probabilities || { SAFE: 0, UNSAFE: 0, DEADLOCK: 0 };
+    
+    // Update status
+    if (statusEl) {
+        let statusClass = 'safe';
+        let statusIcon = '✅';
+        let statusText = 'System is Safe';
+        
+        if (prediction === 'UNSAFE') {
+            statusClass = 'unsafe';
+            statusIcon = '⚠️';
+            statusText = 'Potential Risk Detected';
+        } else if (prediction === 'DEADLOCK-PRONE' || prediction === 'DEADLOCK') {
+            statusClass = 'deadlock';
+            statusIcon = '🚫';
+            statusText = 'High Deadlock Risk!';
+        }
+        
+        statusEl.className = `prediction-status ${statusClass}`;
+        statusEl.innerHTML = `
+            <span class="status-icon">${statusIcon}</span>
+            <span class="status-text">${statusText}</span>
+        `;
+    }
+    
+    // Update label
+    if (labelEl) {
+        labelEl.textContent = prediction;
+        labelEl.className = `prediction-label ${prediction.toLowerCase().replace('-prone', '')}`;
+    }
+    
+    // Update probability bars
+    const safeVal = probs.SAFE || 0;
+    const unsafeVal = probs.UNSAFE || 0;
+    const deadlockVal = probs.DEADLOCK || probs['DEADLOCK-PRONE'] || 0;
+    
+    if (safeBar) safeBar.style.width = `${safeVal}%`;
+    if (unsafeBar) unsafeBar.style.width = `${unsafeVal}%`;
+    if (deadlockBar) deadlockBar.style.width = `${deadlockVal}%`;
+    
+    if (safeProb) safeProb.textContent = `${safeVal.toFixed(1)}%`;
+    if (unsafeProb) unsafeProb.textContent = `${unsafeVal.toFixed(1)}%`;
+    if (deadlockProb) deadlockProb.textContent = `${deadlockVal.toFixed(1)}%`;
 }

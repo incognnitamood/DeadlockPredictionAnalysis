@@ -15,24 +15,28 @@
             </div>
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" data-page="dashboard">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon">📈</span>
                     Dashboard
                 </a>
                 <a href="#" class="nav-item" data-page="upload">
-                    <span class="nav-icon">📤</span>
+                    <span class="nav-icon">📁</span>
                     Upload Dataset
                 </a>
                 <a href="#" class="nav-item" data-page="prediction">
-                    <span class="nav-icon">🔮</span>
+                    <span class="nav-icon">⚡</span>
                     Live Prediction
                 </a>
                 <a href="#" class="nav-item" data-page="insights">
-                    <span class="nav-icon">🔍</span>
+                    <span class="nav-icon">🔬</span>
                     Model Insights
                 </a>
                 <a href="#" class="nav-item" data-page="premium">
-                    <span class="nav-icon">📊</span>
+                    <span class="nav-icon">🔗</span>
                     Resource Allocation Graph
+                </a>
+                <a href="#" class="nav-item" data-page="simulator">
+                    <span class="nav-icon">🎛️</span>
+                    Load Simulator
                 </a>
             </nav>
         </div>
@@ -45,8 +49,9 @@
                     <h1 id="page-title">Resource Graph</h1>
                 </div>
                 <div class="topbar-right">
-                    <button id="refresh-all-btn" class="refresh-btn" title="Refresh all data">
-                        🔄 Refresh All
+                    <button id="refresh-all-btn" class="refresh-badge" title="Refresh all data">
+                        <div class="refresh-icon">🔄</div>
+                        <span>Refresh</span>
                     </button>
                     <div class="status-indicator">
                         <div class="status-dot"></div>
@@ -346,22 +351,6 @@
                                     <h4>Resource Allocation Graph</h4>
                                     <div id="rag-graph-container"></div>
                                 </div>
-                                
-                                <!-- Gantt Chart Timeline -->
-                                <div id="gantt-chart-section" style="display: none; margin-top: 25px;">
-                                    <h4>Process Execution Timeline</h4>
-                                    <div class="gantt-controls">
-                                        <button id="play-timeline-btn" class="gantt-control-btn">▶ Play Timeline</button>
-                                        <button id="pause-timeline-btn" class="gantt-control-btn" style="display: none;">⏸ Pause</button>
-                                        <button id="reset-timeline-btn" class="gantt-control-btn">↺ Reset</button>
-                                        <input type="range" id="timeline-speed" min="1" max="10" value="5" class="timeline-slider">
-                                        <label for="timeline-speed">Speed: <span id="speed-value">5x</span></label>
-                                    </div>
-                                    <div id="gantt-chart-container">
-                                        <div id="gantt-timeline"></div>
-                                        <div id="gantt-processes"></div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -484,6 +473,118 @@
                     </div>
                 </div>
             </div>
+
+                <!-- CPU/Memory/IO Load Emulator Section -->
+                <section id="simulator-page" class="page">
+                    <div class="page-header">
+                        <h2>CPU/Memory/IO Load Emulator</h2>
+                        <p class="page-subtitle">Simulate OS workload conditions and predict deadlock risk</p>
+                    </div>
+                    
+                    <div class="simulator-container">
+                        <!-- Controls Panel -->
+                        <div class="simulator-controls">
+                            <h3>Workload Configuration</h3>
+                            
+                            <div class="control-group">
+                                <label for="cpu-load-slider">
+                                    <span class="control-label">CPU Load</span>
+                                    <span class="control-value" id="cpu-load-value">50%</span>
+                                </label>
+                                <input type="range" id="cpu-load-slider" min="0" max="100" value="50" class="simulator-slider cpu-slider">
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="memory-load-slider">
+                                    <span class="control-label">Memory Load</span>
+                                    <span class="control-value" id="memory-load-value">50%</span>
+                                </label>
+                                <input type="range" id="memory-load-slider" min="0" max="100" value="50" class="simulator-slider memory-slider">
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="io-load-slider">
+                                    <span class="control-label">IO Load</span>
+                                    <span class="control-value" id="io-load-value">50%</span>
+                                </label>
+                                <input type="range" id="io-load-slider" min="0" max="100" value="50" class="simulator-slider io-slider">
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="process-count-slider">
+                                    <span class="control-label">Number of Processes</span>
+                                    <span class="control-value" id="process-count-value">10</span>
+                                </label>
+                                <input type="range" id="process-count-slider" min="1" max="50" value="10" class="simulator-slider process-slider">
+                            </div>
+                            
+                            <div class="control-group">
+                                <label for="workload-type-select">
+                                    <span class="control-label">Workload Type</span>
+                                </label>
+                                <select id="workload-type-select" class="workload-select">
+                                    <option value="mixed">Mixed</option>
+                                    <option value="cpu-bound">CPU-bound</option>
+                                    <option value="io-bound">IO-bound</option>
+                                    <option value="memory-heavy">Memory-heavy</option>
+                                </select>
+                            </div>
+                            
+                            <button id="reset-simulator-btn" class="reset-simulator-btn">
+                                <span>↺</span> Reset to Defaults
+                            </button>
+                        </div>
+                        
+                        <!-- Prediction Result Panel -->
+                        <div class="simulator-prediction">
+                            <h3>Prediction Result</h3>
+                            <div id="simulator-prediction-result" class="prediction-result-panel">
+                                <div class="prediction-status" id="sim-prediction-status">
+                                    <span class="status-icon">⏳</span>
+                                    <span class="status-text">Analyzing...</span>
+                                </div>
+                                <div class="prediction-label" id="sim-prediction-label">--</div>
+                                <div class="probability-bars" id="sim-probability-bars">
+                                    <div class="prob-bar-group">
+                                        <div class="prob-bar-label">
+                                            <span>SAFE</span>
+                                            <span id="sim-safe-prob">0%</span>
+                                        </div>
+                                        <div class="prob-bar-track">
+                                            <div class="prob-bar-fill safe" id="sim-safe-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="prob-bar-group">
+                                        <div class="prob-bar-label">
+                                            <span>UNSAFE</span>
+                                            <span id="sim-unsafe-prob">0%</span>
+                                        </div>
+                                        <div class="prob-bar-track">
+                                            <div class="prob-bar-fill unsafe" id="sim-unsafe-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="prob-bar-group">
+                                        <div class="prob-bar-label">
+                                            <span>DEADLOCK</span>
+                                            <span id="sim-deadlock-prob">0%</span>
+                                        </div>
+                                        <div class="prob-bar-track">
+                                            <div class="prob-bar-fill deadlock" id="sim-deadlock-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Simulated Processes Preview -->
+                        <div class="simulator-processes">
+                            <h3>Simulated Processes Preview <span id="sim-process-count-badge" class="process-count-badge">0</span></h3>
+                            <div id="simulated-processes-container" class="simulated-processes-list">
+                                <!-- Processes will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
         </div>
     </div>
 
